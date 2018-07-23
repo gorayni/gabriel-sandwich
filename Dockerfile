@@ -2,7 +2,7 @@ FROM cmusatyalab/gabriel
 MAINTAINER Satyalab, satya-group@lists.andrew.cmu.edu
 
 WORKDIR /
-RUN git clone https://github.com/cmusatyalab/gabriel-sandwich.git
+RUN git clone https://github.com/gorayni/gabriel-sandwich.git
 
 ENV FASTER_RCNN_ROOT /py-faster-rcnn
 
@@ -34,6 +34,7 @@ RUN apt-get update && apt-get install -y \
     libsnappy-dev \
     libhdf5-serial-dev \
     libatlas-base-dev \
+    nano \
     protobuf-compiler \
     wget
 
@@ -71,6 +72,7 @@ RUN cd caffe-fast-rcnn && \
     sed -i 's%INCLUDE_DIRS := $(PYTHON_INCLUDE) /usr/local/include%INCLUDE_DIRS := $(PYTHON_INCLUDE) /usr/local/include /usr/include/hdf5/serial/%' Makefile.config && \
     sed -i 's%LIBRARY_DIRS := $(PYTHON_LIB) /usr/local/lib /usr/lib%LIBRARY_DIRS := $(PYTHON_LIB) /usr/local/lib /usr/lib /usr/lib/x86_64-linux-gnu/hdf5/serial/%' Makefile.config && \
     sed -i 's%# WITH_PYTHON_LAYER := 1%WITH_PYTHON_LAYER := 1%' Makefile.config && \
+    sed -i 's%# CPU_ONLY := 1%CPU_ONLY := 1%' Makefile.config && \
     cat Makefile.config && \
     make -j$(nproc) && \
     make -j$(nproc) pycaffe

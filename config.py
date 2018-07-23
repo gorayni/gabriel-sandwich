@@ -32,7 +32,7 @@ TASK_SERVER_IP = "128.2.211.75"
 TASK_SERVER_PORT = 5511
 
 # Configs for object detection
-USE_GPU = True
+USE_GPU = False
 
 # Whether or not to save the displayed image in a temporary directory
 SAVE_IMAGE = False
