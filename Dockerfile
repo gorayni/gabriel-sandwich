@@ -68,7 +68,7 @@ RUN pip install easydict && \
 RUN cat python/requirements.txt | xargs -n1 pip2 install --user
 
 # must be this version of numpy, or it will crash: https://github.com/rbgirshick/py-faster-rcnn/issues/480; no need for this anymore?
-RUN pip install --user -Iv numpy==1.11.1
+RUN pip install --user -Iv numpy
 RUN pip install --user -U python-dateutil
 
 # compile py-faster-rcnn
