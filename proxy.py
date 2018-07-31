@@ -19,7 +19,7 @@
 #   limitations under the License.
 #
 
-from base64 import b64encode, b64decode
+from base64 import b64encode
 import cv2
 import json
 import multiprocessing
@@ -30,12 +30,12 @@ import Queue
 import socket
 import struct
 import sys
-import threading
 import time
 
 import config
 import cooking_cv as cc
 import Task
+
 sys.path.insert(0, "..")
 import zhuocv as zc
 
@@ -43,10 +43,10 @@ if os.path.isdir("../../gabriel/server"):
     sys.path.insert(0, "../../gabriel/server")
 import gabriel
 import gabriel.proxy
+
 LOG = gabriel.logging.getLogger(__name__)
 
-
-config.setup(is_streaming = True)
+config.setup(is_streaming=True)
 display_list = config.DISPLAY_LIST
 
 LOG_TAG = "Cooking Proxy: "
@@ -66,17 +66,20 @@ def reorder_objects(result):
 
     return result
 
+
 def display_verbal_guidance(text):
-    img_display = np.ones((200, 400, 3), dtype = np.uint8) * 100
+    img_display = np.ones((200, 400, 3), dtype=np.uint8) * 100
     lines = text.split('.')
     y_pos = 30
     for line in lines:
         cv2.putText(img_display, line.strip(), (10, y_pos), cv2.FONT_HERSHEY_SIMPLEX, 0.5, [0, 255, 0])
         y_pos += 50
-    zc.check_and_display('text_guidance', img_display, display_list, resize_max = config.DISPLAY_MAX_PIXEL, wait_time = config.DISPLAY_WAIT_TIME)
+    zc.check_and_display('text_guidance', img_display, display_list, resize_max=config.DISPLAY_MAX_PIXEL,
+                         wait_time=config.DISPLAY_WAIT_TIME)
+
 
 class CookingProxy(gabriel.proxy.CognitiveProcessThread):
-    def __init__(self, image_queue, output_queue, engine_id, log_flag = True):
+    def __init__(self, image_queue, output_queue, engine_id, log_flag=True):
         super(CookingProxy, self).__init__(image_queue, output_queue, engine_id)
         self.log_flag = log_flag
         self.is_first_image = True
@@ -103,7 +106,7 @@ class CookingProxy(gabriel.proxy.CognitiveProcessThread):
         LOG.info("received new image")
 
         header['status'] = "nothing"
-        result = {} # default
+        result = {}  # default
 
         ## first image
         if self.is_first_image:
@@ -120,23 +123,27 @@ class CookingProxy(gabriel.proxy.CognitiveProcessThread):
             if instruction.get('image', None) is not None:
                 feedback_image = b64encode(zc.cv_image2raw(instruction['image']))
                 result['image'] = feedback_image
-                zc.check_and_display('img_guidance', instruction['image'], display_list, resize_max = config.DISPLAY_MAX_PIXEL, wait_time = config.DISPLAY_WAIT_TIME)
+                zc.check_and_display('img_guidance', instruction['image'], display_list,
+                                     resize_max=config.DISPLAY_MAX_PIXEL, wait_time=config.DISPLAY_WAIT_TIME)
 
             return json.dumps(result)
 
         ## preprocessing of input image
         img = zc.raw2cv_image(data)
         if header.get('holo_capture', None) is not None:
-            zc.check_and_display('holo', img, display_list, resize_max = config.DISPLAY_MAX_PIXEL, wait_time = config.DISPLAY_WAIT_TIME)
+            zc.check_and_display('holo', img, display_list, resize_max=config.DISPLAY_MAX_PIXEL,
+                                 wait_time=config.DISPLAY_WAIT_TIME)
             return json.dumps(result)
-        zc.check_and_display('input', img, display_list, resize_max = config.DISPLAY_MAX_PIXEL, wait_time = config.DISPLAY_WAIT_TIME)
+        zc.check_and_display('input', img, display_list, resize_max=config.DISPLAY_MAX_PIXEL,
+                             wait_time=config.DISPLAY_WAIT_TIME)
 
         ## preprocessing of input image
         resize_ratio = 1
         if max(img.shape) > config.IMAGE_MAX_WH:
             resize_ratio = float(config.IMAGE_MAX_WH) / max(img.shape[0], img.shape[1])
-            img = cv2.resize(img, (0, 0), fx = resize_ratio, fy = resize_ratio, interpolation = cv2.INTER_AREA)
-        zc.check_and_display('input', img, display_list, resize_max = config.DISPLAY_MAX_PIXEL, wait_time = config.DISPLAY_WAIT_TIME)
+            img = cv2.resize(img, (0, 0), fx=resize_ratio, fy=resize_ratio, interpolation=cv2.INTER_AREA)
+        zc.check_and_display('input', img, display_list, resize_max=config.DISPLAY_MAX_PIXEL,
+                             wait_time=config.DISPLAY_WAIT_TIME)
 
         ## get current state
         t = time.time()
@@ -147,13 +154,13 @@ class CookingProxy(gabriel.proxy.CognitiveProcessThread):
         if gabriel.Debug.TIME_MEASUREMENT:
             result[gabriel.Protocol_measurement.JSON_KEY_APP_SYMBOLIC_TIME] = time.time()
 
-
         # the object detection result format is, for each line: [x1, y1, x2, y2, confidence, cls_idx]
         objects = np.array(json.loads(objects_data))
         objects = reorder_objects(objects)
         if "object" in display_list:
             img_object = zc.vis_detections(img, objects, config.LABELS)
-            zc.check_and_display("object", img_object, display_list, resize_max = config.DISPLAY_MAX_PIXEL, wait_time = config.DISPLAY_WAIT_TIME)
+            zc.check_and_display("object", img_object, display_list, resize_max=config.DISPLAY_MAX_PIXEL,
+                                 wait_time=config.DISPLAY_WAIT_TIME)
         LOG.info("object detection result: %s" % objects)
 
         ## for measurement, when the sysmbolic representation has been got
@@ -175,13 +182,15 @@ class CookingProxy(gabriel.proxy.CognitiveProcessThread):
         if instruction.get('image', None) is not None:
             feedback_image = b64encode(zc.cv_image2raw(instruction['image']))
             result['image'] = feedback_image
-            zc.check_and_display('img_guidance', instruction['image'], display_list, resize_max = config.DISPLAY_MAX_PIXEL, wait_time = config.DISPLAY_WAIT_TIME)
+            zc.check_and_display('img_guidance', instruction['image'], display_list,
+                                 resize_max=config.DISPLAY_MAX_PIXEL, wait_time=config.DISPLAY_WAIT_TIME)
         if instruction.get('holo_object', None) is not None:
             result['holo_object'] = instruction['holo_object']
         if instruction.get('holo_location', None) is not None:
             result['holo_location'] = instruction['holo_location']
 
         return json.dumps(result)
+
 
 if __name__ == "__main__":
     settings = gabriel.util.process_command_line(sys.argv[1:])
@@ -206,7 +215,7 @@ if __name__ == "__main__":
     # app proxy
     result_queue = multiprocessing.Queue()
 
-    app_proxy = CookingProxy(image_queue, result_queue, engine_id = "Sandwich")
+    app_proxy = CookingProxy(image_queue, result_queue, engine_id="Sandwich")
     app_proxy.start()
     app_proxy.isDaemon = True
 
@@ -228,4 +237,3 @@ if __name__ == "__main__":
         if app_proxy is not None:
             app_proxy.terminate()
         result_pub.terminate()
-

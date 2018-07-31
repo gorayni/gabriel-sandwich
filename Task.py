@@ -25,8 +25,9 @@ import xml.etree.ElementTree as ET
 
 import config
 
-OBJECTS = config.LABELS # ["bread", "ham", "cucumber", "lettuce", "cheese", "half", "hamwrong", "tomato", "full"]
+OBJECTS = config.LABELS  # ["bread", "ham", "cucumber", "lettuce", "cheese", "half", "hamwrong", "tomato", "full"]
 STATES = ["start", "nothing", "bread", "ham", "lettuce", "cucumber", "half", "tomato", "hamwrong", "full"]
+
 
 class Task:
     def __init__(self):
@@ -39,11 +40,11 @@ class Task:
             speech = instruction.find('speech').text.strip()
             image_path = instruction.find('image').get('path')
             image = cv2.imread(image_path) if image_path else None
-            self.instructions[state] = {'speech' : speech, 'image' : image}
+            self.instructions[state] = {'speech': speech, 'image': image}
 
         self.current_state = "start"
 
-    def _get_holo_location(self, objects, label_idx = -1, pos_paras = [5000, 0.5, 0.5]):
+    def _get_holo_location(self, objects, label_idx=-1, pos_paras=[5000, 0.5, 0.5]):
         dist_para, x_para, y_para = pos_paras
         objects = objects[objects[:, -1] == label_idx, :]
         x1, y1, x2, y2 = objects[0, :4]
@@ -55,7 +56,7 @@ class Task:
     def get_instruction(self, objects):
         # @objects format: [x1, y1, x2, y2, confidence, cls_idx]
 
-        result = {'status' : "nothing"}
+        result = {'status': "nothing"}
 
         # the start
         if self.current_state == "start":
@@ -64,7 +65,7 @@ class Task:
             self.current_state = "nothing"
             return result
 
-        if len(objects.shape) < 2: # nothing detected
+        if len(objects.shape) < 2:  # nothing detected
             return result
 
         # get the count of detected objects
@@ -77,7 +78,8 @@ class Task:
                 result = self.instructions['bread']
                 result['status'] = "success"
                 result['holo_object'] = "ham"
-                result['holo_location'] = self._get_holo_location(objects, label_idx = 0, pos_paras = config.holo_pos_paras['ham'])
+                result['holo_location'] = self._get_holo_location(objects, label_idx=0,
+                                                                  pos_paras=config.holo_pos_paras['ham'])
                 self.current_state = "bread"
 
         elif self.current_state == "bread":
@@ -85,19 +87,22 @@ class Task:
                 result = self.instructions['ham']
                 result['status'] = "success"
                 result['holo_object'] = "lettuce"
-                result['holo_location'] = self._get_holo_location(objects, label_idx = 1, pos_paras = config.holo_pos_paras['lettuce'])
+                result['holo_location'] = self._get_holo_location(objects, label_idx=1,
+                                                                  pos_paras=config.holo_pos_paras['lettuce'])
                 self.current_state = "ham"
             elif object_counts[0] > 0:
                 result['status'] = "success"
                 result['holo_object'] = "ham"
-                result['holo_location'] = self._get_holo_location(objects, label_idx = 0, pos_paras = config.holo_pos_paras['ham'])
+                result['holo_location'] = self._get_holo_location(objects, label_idx=0,
+                                                                  pos_paras=config.holo_pos_paras['ham'])
 
         elif self.current_state == "ham":
             if object_counts[3] > 0:
                 result = self.instructions['lettuce']
                 result['status'] = "success"
                 result['holo_object'] = "bread"
-                result['holo_location'] = self._get_holo_location(objects, label_idx = 3, pos_paras = config.holo_pos_paras['bread'])
+                result['holo_location'] = self._get_holo_location(objects, label_idx=3,
+                                                                  pos_paras=config.holo_pos_paras['bread'])
                 self.current_state = "lettuce"
             elif object_counts[2] > 0:
                 result = self.instructions['cucumber']
@@ -107,30 +112,35 @@ class Task:
                 result = self.instructions['bread']
                 result['status'] = "success"
                 result['holo_object'] = "ham"
-                result['holo_location'] = self._get_holo_location(objects, label_idx = 0, pos_paras = config.holo_pos_paras['ham'])
+                result['holo_location'] = self._get_holo_location(objects, label_idx=0,
+                                                                  pos_paras=config.holo_pos_paras['ham'])
                 self.current_state = "bread"
             elif object_counts[1] > 0:
                 result['status'] = "success"
                 result['holo_object'] = "lettuce"
-                result['holo_location'] = self._get_holo_location(objects, label_idx = 1, pos_paras = config.holo_pos_paras['lettuce'])
+                result['holo_location'] = self._get_holo_location(objects, label_idx=1,
+                                                                  pos_paras=config.holo_pos_paras['lettuce'])
 
         elif self.current_state == "lettuce":
             if object_counts[5] > 0:
                 result = self.instructions['half']
                 result['status'] = "success"
                 result['holo_object'] = "tomato"
-                result['holo_location'] = self._get_holo_location(objects, label_idx = 5, pos_paras = config.holo_pos_paras['tomato'])
+                result['holo_location'] = self._get_holo_location(objects, label_idx=5,
+                                                                  pos_paras=config.holo_pos_paras['tomato'])
                 self.current_state = "half"
             elif object_counts[1] > 0 and object_counts[3] == 0:
                 result = self.instructions['ham']
                 result['status'] = "success"
                 result['holo_object'] = "lettuce"
-                result['holo_location'] = self._get_holo_location(objects, label_idx = 1, pos_paras = config.holo_pos_paras['lettuce'])
+                result['holo_location'] = self._get_holo_location(objects, label_idx=1,
+                                                                  pos_paras=config.holo_pos_paras['lettuce'])
                 self.current_state = "ham"
             elif object_counts[3] > 0:
                 result['status'] = "success"
                 result['holo_object'] = "bread"
-                result['holo_location'] = self._get_holo_location(objects, label_idx = 3, pos_paras = config.holo_pos_paras['bread'])
+                result['holo_location'] = self._get_holo_location(objects, label_idx=3,
+                                                                  pos_paras=config.holo_pos_paras['bread'])
 
         elif self.current_state == "cucumber":
             if object_counts[3] > 0:
@@ -141,7 +151,8 @@ class Task:
                 result = self.instructions['ham']
                 result['status'] = "success"
                 result['holo_object'] = "lettuce"
-                result['holo_location'] = self._get_holo_location(objects, label_idx = 1, pos_paras = config.holo_pos_paras['lettuce'])
+                result['holo_location'] = self._get_holo_location(objects, label_idx=1,
+                                                                  pos_paras=config.holo_pos_paras['lettuce'])
                 self.current_state = "ham"
 
         elif self.current_state == "half":
@@ -149,7 +160,8 @@ class Task:
                 result = self.instructions['tomato']
                 result['status'] = "success"
                 result['holo_object'] = "breadtop"
-                result['holo_location'] = self._get_holo_location(objects, label_idx = 7, pos_paras = config.holo_pos_paras['breadtop'])
+                result['holo_location'] = self._get_holo_location(objects, label_idx=7,
+                                                                  pos_paras=config.holo_pos_paras['breadtop'])
                 self.current_state = "tomato"
             elif object_counts[6] > 0:
                 result = self.instructions['hamwrong']
@@ -159,12 +171,14 @@ class Task:
                 result = self.instructions['lettuce']
                 result['status'] = "success"
                 result['holo_object'] = "bread"
-                result['holo_location'] = self._get_holo_location(objects, label_idx = 3, pos_paras = config.holo_pos_paras['bread'])
+                result['holo_location'] = self._get_holo_location(objects, label_idx=3,
+                                                                  pos_paras=config.holo_pos_paras['bread'])
                 self.current_state = "lettuce"
             elif object_counts[5] > 0:
                 result['status'] = "success"
                 result['holo_object'] = "tomato"
-                result['holo_location'] = self._get_holo_location(objects, label_idx = 5, pos_paras = config.holo_pos_paras['tomato'])
+                result['holo_location'] = self._get_holo_location(objects, label_idx=5,
+                                                                  pos_paras=config.holo_pos_paras['tomato'])
 
         elif self.current_state == "tomato":
             if object_counts[8] > 0:
@@ -177,25 +191,29 @@ class Task:
                 result = self.instructions['half']
                 result['status'] = "success"
                 result['holo_object'] = "tomato"
-                result['holo_location'] = self._get_holo_location(objects, label_idx = 5, pos_paras = config.holo_pos_paras['tomato'])
+                result['holo_location'] = self._get_holo_location(objects, label_idx=5,
+                                                                  pos_paras=config.holo_pos_paras['tomato'])
                 self.current_state = "half"
             elif object_counts[7] > 0:
                 result['status'] = "success"
                 result['holo_object'] = "breadtop"
-                result['holo_location'] = self._get_holo_location(objects, label_idx = 7, pos_paras = config.holo_pos_paras['breadtop'])
+                result['holo_location'] = self._get_holo_location(objects, label_idx=7,
+                                                                  pos_paras=config.holo_pos_paras['breadtop'])
 
         elif self.current_state == "hamwrong":
             if object_counts[7] > 0:
                 result = self.instructions['tomato']
                 result['status'] = "success"
                 result['holo_object'] = "breadtop"
-                result['holo_location'] = self._get_holo_location(objects, label_idx = 7, pos_paras = config.holo_pos_paras['breadtop'])
+                result['holo_location'] = self._get_holo_location(objects, label_idx=7,
+                                                                  pos_paras=config.holo_pos_paras['breadtop'])
                 self.current_state = "tomato"
             elif object_counts[5] > 0 and object_counts[7] == 0:
                 result = self.instructions['half']
                 result['status'] = "success"
                 result['holo_object'] = "tomato"
-                result['holo_location'] = self._get_holo_location(objects, label_idx = 5, pos_paras = config.holo_pos_paras['tomato'])
+                result['holo_location'] = self._get_holo_location(objects, label_idx=5,
+                                                                  pos_paras=config.holo_pos_paras['tomato'])
                 self.current_state = "half"
 
         return result
